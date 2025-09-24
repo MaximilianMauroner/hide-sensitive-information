@@ -1,0 +1,22 @@
+{
+  "name": "hide-sensitive-information",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "bun run clean && mkdir -p dist && bunx esbuild src/index.ts --bundle --platform=browser --format=esm --target=es2022 --outfile=dist/index.js --log-level=info && bunx esbuild src/service-worker.ts --bundle --platform=browser --format=esm --target=es2022 --outfile=dist/service-worker.js --log-level=info && cp manifest.json dist/",
+    "build:watch": "bun run clean && mkdir -p dist && bunx esbuild src/index.ts --bundle --platform=browser --format=esm --target=es2022 --outfile=dist/index.js --watch=forever & bunx esbuild src/service-worker.ts --bundle --platform=browser --format=esm --target=es2022 --outfile=dist/service-worker.js --watch=forever & cp manifest.json dist/ && wait",
+    "typecheck": "tsc --noEmit",
+    "dev": "bun run build:watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0",
+    "@types/chrome": "^0.1.12",
+    "@types/bun": "latest",
+    "prettier": "^3.6.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

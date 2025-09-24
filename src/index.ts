@@ -1,12 +1,12 @@
 const dataTypeAttribute = "data-hide-sensitive-information-type";
-let isHiddenGlobal = false;
-let throttleTimer = null;
+let isHiddenGlobal: boolean = false;
+let throttleTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Run as soon as possible - even before DOM is fully loaded
 executeEarly();
 
 // Create an observer instance that will run only once for initial load
-const initialObserver = new MutationObserver((mutations) => {
+const initialObserver = new MutationObserver((_mutations) => {
   try {
     // Process immediately without disconnecting first for speed
     if (isHiddenGlobal) {
@@ -20,7 +20,7 @@ const initialObserver = new MutationObserver((mutations) => {
 });
 
 // Create a continuous observer to detect new content
-const contentObserver = new MutationObserver((mutations) => {
+const contentObserver = new MutationObserver((_mutations) => {
   if (!isHiddenGlobal) return; // Only process if hiding is enabled
 
   // Throttle processing to prevent performance issues
@@ -116,8 +116,8 @@ function setupNavigationMonitoring() {
   const originalPushState = history.pushState;
   const originalReplaceState = history.replaceState;
 
-  history.pushState = function () {
-    originalPushState.apply(this, arguments);
+  history.pushState = function (...args: Parameters<typeof history.pushState>) {
+    originalPushState.apply(this, args as any);
     if (isHiddenGlobal) {
       requestAnimationFrame(() => {
         toggleEmail();
@@ -125,8 +125,10 @@ function setupNavigationMonitoring() {
     }
   };
 
-  history.replaceState = function () {
-    originalReplaceState.apply(this, arguments);
+  history.replaceState = function (
+    ...args: Parameters<typeof history.replaceState>
+  ) {
+    originalReplaceState.apply(this, args as any);
     if (isHiddenGlobal) {
       requestAnimationFrame(() => {
         toggleEmail();
@@ -155,7 +157,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-function handleState(hidden) {
+function handleState(hidden: boolean) {
   isHiddenGlobal = hidden; // Store the state globally
 
   if (hidden && document.body) {
@@ -165,7 +167,7 @@ function handleState(hidden) {
   }
 }
 
-function toggleEmail() {
+function toggleEmail(): void {
   // email regex: https://stackoverflow.com/questions/201323/how-can-i-validate-an-email-address-using-a-regular-expression
   const emailRegex = RegExp(
     /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/g
@@ -179,7 +181,7 @@ function toggleEmail() {
 }
 
 // Process visible content first (in viewport)
-function processVisibleContent(emailRegex) {
+function processVisibleContent(emailRegex: RegExp): void {
   // get email inputs by id, name and obviously type. this can include duplicates but we don't care
   const possibleEmailInputs = [
     ...document.querySelectorAll(`input[id="mail"]`),
@@ -191,7 +193,7 @@ function processVisibleContent(emailRegex) {
     ...document.querySelectorAll(`input[name="mail_address"]`),
     ...document.querySelectorAll(`input[name="email_address"]`),
     ...document.querySelectorAll(`input[type="email"]`),
-  ];
+  ] as HTMLInputElement[];
 
   // Handle input fields immediately
   for (const email of possibleEmailInputs) {
@@ -214,6 +216,7 @@ function processVisibleContent(emailRegex) {
     const allElements = document.body.getElementsByTagName("*");
     for (let i = 0; i < allElements.length; i++) {
       const element = allElements[i];
+      if (!element) continue;
       const rect = element.getBoundingClientRect();
 
       // Check if element is in viewport
@@ -233,40 +236,40 @@ function processVisibleContent(emailRegex) {
 }
 
 // Process all content after visible content
-function processAllContent(emailRegex) {
+function processAllContent(emailRegex: RegExp): void {
   replaceEmailsInTextNodes(document.body, emailRegex);
 }
 
 // Function to safely traverse DOM and replace emails in text nodes only
-function replaceEmailsInTextNodes(element, emailRegex) {
+function replaceEmailsInTextNodes(
+  element: Element | Document | null,
+  emailRegex: RegExp
+): void {
   if (!element) return;
 
-  // Skip script and style elements entirely
-  if (element.tagName === "SCRIPT" || element.tagName === "STYLE") {
-    return;
+  // If this is an Element, optionally skip SCRIPT/STYLE
+  if (element instanceof Element) {
+    const tag = element.tagName;
+    if (tag === "SCRIPT" || tag === "STYLE") return;
   }
 
-  // Process child nodes
-  for (let i = 0; i < element.childNodes.length; i++) {
-    const node = element.childNodes[i];
+  const childNodes = (element as Element | Document).childNodes;
+  for (let i = 0; i < childNodes.length; i++) {
+    const node = childNodes[i];
+    if (!node) continue;
 
-    // Text node processing
-    if (node.nodeType === 3) {
-      // Node.TEXT_NODE
-      const text = node.nodeValue;
-      if (emailRegex.test(text)) {
-        node.nodeValue = text.replace(emailRegex, (match) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const current = node.nodeValue;
+      if (current && emailRegex.test(current)) {
+        node.nodeValue = current.replace(emailRegex, (match) => {
           return match
             .split("@")
             .map((part) => part.replace(/./g, "*"))
             .join("@");
         });
       }
-    }
-    // Element node - recursive traversal
-    else if (node.nodeType === 1) {
-      // Node.ELEMENT_NODE
-      replaceEmailsInTextNodes(node, emailRegex);
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      replaceEmailsInTextNodes(node as Element, emailRegex);
     }
   }
 }

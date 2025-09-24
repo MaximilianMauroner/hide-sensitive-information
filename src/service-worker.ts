@@ -8,15 +8,18 @@ function toggleSensitiveInformation() {
     chrome.storage.sync.set({ isHidden: newState }, () => {
       chrome.tabs.query({}, (tabs) => {
         tabs.forEach((tab) => {
-          if (!tab.url.includes("chrome://")) {
-            chrome.tabs
-              .sendMessage(tab.id, {
+          try {
+            if (
+              !tab.url?.includes("chrome://") &&
+              typeof tab.id !== "undefined"
+            ) {
+              chrome.tabs.sendMessage(tab.id, {
                 action: "change-hidden-mode",
                 isHidden: newState,
-              })
-              .catch((error) =>
-                console.log("Error sending message to tab:", error)
-              );
+              });
+            }
+          } catch (error) {
+            console.log("Error sending message to tab:", error);
           }
         });
       });
@@ -25,7 +28,11 @@ function toggleSensitiveInformation() {
 }
 
 chrome.action.onClicked.addListener((tab) => {
-  if (!tab.url.includes("chrome://")) {
-    toggleSensitiveInformation();
+  try {
+    if (!tab.url?.includes("chrome://")) {
+      toggleSensitiveInformation();
+    }
+  } catch (e) {
+    console.log(e);
   }
 });
