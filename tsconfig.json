@@ -1,23 +1,32 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    // Enable latest features
+    "lib": ["ESNext", "DOM"],
+    "target": "ESNext",
     "module": "ESNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+
+    // Bundler mode
     "moduleResolution": "bundler",
-    "allowJs": false,
-    "rootDir": "src",
-    "outDir": "dist",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
     "noEmit": true,
-    "types": ["chrome"],
-    "typeRoots": ["./types", "./node_modules/@types"],
+
+    // Best practices
     "strict": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true,
-    "isolatedModules": true
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+
+    // Some stricter flags (disabled by default)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+
+    "baseUrl": ".",
+    "paths": {
+      "src": ["./src/*"]
+    }
+  }
 }

@@ -1,4 +1,8 @@
+import { getIsHidden } from "./utils";
+
 const dataTypeAttribute = "data-hide-sensitive-information-type";
+const textOriginalAttribute = "data-hide-sensitive-original";
+
 let isHiddenGlobal: boolean = false;
 let throttleTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -35,33 +39,36 @@ const contentObserver = new MutationObserver((_mutations) => {
 // Execute as early as possible
 function executeEarly() {
   // Try to get the state immediately
-  chrome.storage.sync.get("isHidden", (data) => {
-    handleState(data.isHidden);
+  (async () => {
+    const isHidden = await getIsHidden();
+    handleState(isHidden);
 
     // Execute immediately if we can
-    if (data.isHidden && document.body) {
+    if (isHidden && document.body) {
       requestAnimationFrame(() => {
         toggleEmail();
       });
     }
-  });
+  })();
 
   // Add fastest possible listeners
   document.addEventListener("DOMContentLoaded", () => {
-    chrome.storage.sync.get("isHidden", (data) => {
-      handleState(data.isHidden);
-      if (data.isHidden) {
+    (async () => {
+      const isHidden = await getIsHidden();
+      handleState(isHidden);
+      if (isHidden) {
         requestAnimationFrame(() => {
           toggleEmail();
         });
       }
-    });
+    })();
   });
 }
 
 // Initial check directly
-chrome.storage.sync.get("isHidden", (data) => {
-  handleState(data.isHidden);
+(async () => {
+  const isHidden = await getIsHidden();
+  handleState(isHidden);
 
   // Set up observers immediately
   if (document.body) {
@@ -93,13 +100,13 @@ chrome.storage.sync.get("isHidden", (data) => {
 
   // Also run when the page is fully loaded for any missed content
   window.addEventListener("load", () => {
-    if (data.isHidden) {
+    if (isHidden) {
       requestAnimationFrame(() => {
         toggleEmail();
       });
     }
   });
-});
+})();
 
 // Set up monitoring for URL/navigation changes
 function setupNavigationMonitoring() {
@@ -151,20 +158,66 @@ function setupContinuousObservation() {
 }
 
 // Listen for messages from popup/background
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request) => {
   if (request.action === "change-hidden-mode") {
     handleState(request.isHidden);
   }
 });
 
 function handleState(hidden: boolean) {
-  isHiddenGlobal = hidden; // Store the state globally
-
-  if (hidden && document.body) {
+  isHiddenGlobal = hidden;
+  if (document.body) {
     requestAnimationFrame(() => {
-      toggleEmail();
+      if (hidden) toggleEmail();
+      else restoreEmail();
     });
   }
+}
+
+function restoreEmail(): void {
+  try {
+    restoreInputTypes();
+    restoreTextNodes(document.body);
+  } catch (e) {
+    console.log("Error restoring email content:", e);
+  }
+}
+
+function restoreInputTypes() {
+  const inputs = Array.from(
+    document.querySelectorAll<HTMLInputElement>(`input[${dataTypeAttribute}]`)
+  );
+
+  for (const input of inputs) {
+    const original = input.getAttribute(dataTypeAttribute);
+    if (original) {
+      try {
+        input.type = original;
+      } catch (e) {
+        // ignore if type cannot be set
+      }
+    }
+    input.removeAttribute(dataTypeAttribute);
+  }
+}
+
+function restoreTextNodes(root: Element | Document | null) {
+  if (!root) return;
+  const els = (root as Element).querySelectorAll
+    ? (root as Element).querySelectorAll(`[${textOriginalAttribute}]`)
+    : [];
+
+  els.forEach((el) => {
+    try {
+      const encoded = el.getAttribute(textOriginalAttribute);
+      if (encoded == null) return;
+      const original = decodeURIComponent(encoded);
+      const textNode = document.createTextNode(original);
+      el.replaceWith(textNode);
+    } catch (e) {
+      // ignore errors during replace
+    }
+  });
 }
 
 function toggleEmail(): void {
@@ -184,16 +237,34 @@ function toggleEmail(): void {
 function processVisibleContent(emailRegex: RegExp): void {
   // get email inputs by id, name and obviously type. this can include duplicates but we don't care
   const possibleEmailInputs = [
-    ...document.querySelectorAll(`input[id="mail"]`),
-    ...document.querySelectorAll(`input[id="email"]`),
-    ...document.querySelectorAll(`input[id="mail_address"]`),
-    ...document.querySelectorAll(`input[id="email_address"]`),
-    ...document.querySelectorAll(`input[name="mail"]`),
-    ...document.querySelectorAll(`input[name="email"]`),
-    ...document.querySelectorAll(`input[name="mail_address"]`),
-    ...document.querySelectorAll(`input[name="email_address"]`),
-    ...document.querySelectorAll(`input[type="email"]`),
-  ] as HTMLInputElement[];
+    ...Array.from(
+      document.querySelectorAll<HTMLInputElement>(`input[id="mail"]`)
+    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLInputElement>(`input[id="email"]`)
+    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLInputElement>(`input[id="mail_address"]`)
+    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLInputElement>(`input[id="email_address"]`)
+    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLInputElement>(`input[name="mail"]`)
+    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLInputElement>(`input[name="email"]`)
+    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLInputElement>(`input[name="mail_address"]`)
+    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLInputElement>(`input[name="email_address"]`)
+    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLInputElement>(`input[type="email"]`)
+    ),
+  ];
 
   // Handle input fields immediately
   for (const email of possibleEmailInputs) {
@@ -261,12 +332,50 @@ function replaceEmailsInTextNodes(
     if (node.nodeType === Node.TEXT_NODE) {
       const current = node.nodeValue;
       if (current && emailRegex.test(current)) {
-        node.nodeValue = current.replace(emailRegex, (match) => {
-          return match
+        // Create a document fragment and replace matches with span elements
+        const frag = document.createDocumentFragment();
+        let lastIndex = 0;
+        let match: RegExpExecArray | null;
+        const re = new RegExp(
+          emailRegex.source,
+          emailRegex.flags + (emailRegex.flags.includes("g") ? "" : "g")
+        );
+        while ((match = re.exec(current)) !== null) {
+          const index = match.index;
+          // text before match
+          if (index > lastIndex) {
+            frag.appendChild(
+              document.createTextNode(current.slice(lastIndex, index))
+            );
+          }
+
+          const matchedText = match[0];
+          const masked = matchedText
             .split("@")
             .map((part) => part.replace(/./g, "*"))
             .join("@");
-        });
+
+          const span = document.createElement("span");
+          span.setAttribute(
+            textOriginalAttribute,
+            encodeURIComponent(matchedText)
+          );
+          span.textContent = masked;
+          frag.appendChild(span);
+
+          lastIndex = index + matchedText.length;
+        }
+
+        // remaining text
+        if (lastIndex < current.length) {
+          frag.appendChild(document.createTextNode(current.slice(lastIndex)));
+        }
+
+        try {
+          node.parentNode?.replaceChild(frag, node);
+        } catch (e) {
+          // ignore replacement errors
+        }
       }
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       replaceEmailsInTextNodes(node as Element, emailRegex);
