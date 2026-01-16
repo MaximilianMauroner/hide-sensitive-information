@@ -25,9 +25,16 @@ jobs:
       - name: Build extension zips
         run: bun run pack
 
-      - name: Upload extension packages
+      - name: Upload Chrome extension
         uses: actions/upload-artifact@v4
         with:
-          name: extension-zips
-          path: release/*.zip
+          name: chrome-extension
+          path: release/*-chrome.zip
+          if-no-files-found: error
+
+      - name: Upload Firefox extension
+        uses: actions/upload-artifact@v4
+        with:
+          name: firefox-extension
+          path: release/*-firefox.zip
           if-no-files-found: error
