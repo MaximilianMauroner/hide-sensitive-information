@@ -62,7 +62,11 @@ for await (const filename of glob.scan(publicFolder)) {
   }
 }
 
-const iconsPath = `${publicFolder}/icons`;
-if (existsSync(iconsPath)) {
-  await $`cp -R ${iconsPath} ${outdir}`;
-}
+const copyIfExists = async (folderName: string) => {
+  const folderPath = `${publicFolder}/${folderName}`;
+  if (existsSync(folderPath)) {
+    await $`cp -R ${folderPath} ${outdir}`;
+  }
+};
+
+await copyIfExists("icons");

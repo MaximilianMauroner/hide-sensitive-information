@@ -1,18 +1,24 @@
 import {
   getCurrentTab,
   getCustomSelectors,
+  getDefaultFilterEnabled,
   getIsHidden,
-  getSiteSelectors,
+  getSiteConfigs,
   getTheme,
   setCustomSelectors,
+  setDefaultFilterEnabled,
   setIsHidden,
-  setSiteSelectors,
+  setSiteConfigs,
   setTheme,
-  type SiteSelectorMap,
+  type SiteConfigMap,
   type ThemeMode,
 } from "../utils";
 
-type SiteEntry = { host: string; selectors: string };
+type SiteEntry = {
+  host: string;
+  selectors: string;
+  defaultFilterEnabled?: boolean; // undefined = inherit global, true/false = override
+};
 
 const normalizeSelectors = (raw: string) =>
   raw
@@ -68,8 +74,12 @@ const examplesTooltip = document.getElementById(
 const examplesLabel = examplesToggle?.querySelector(
   ".hint-label"
 ) as HTMLSpanElement | null;
+const defaultFilterToggle = document.getElementById(
+  "default-filter-toggle"
+) as HTMLInputElement | null;
 
 let hidden: boolean | null = null;
+let defaultFilterEnabled: boolean = true;
 let siteEntries: SiteEntry[] = [];
 let saving = false;
 let theme: ThemeMode = "light";
@@ -142,6 +152,55 @@ const renderSiteEntries = () => {
       siteEntries[index].selectors = target.value;
     });
 
+    // Default filter dropdown
+    const filterRow = document.createElement("div");
+    filterRow.className = "site-filter-row";
+
+    const filterLabel = document.createElement("label");
+    filterLabel.className = "site-filter-label";
+    filterLabel.textContent = "Default filter:";
+
+    const filterSelect = document.createElement("select");
+    filterSelect.className = "site-filter-select";
+
+    const optionInherit = document.createElement("option");
+    optionInherit.value = "inherit";
+    optionInherit.textContent = "Use global setting";
+
+    const optionEnable = document.createElement("option");
+    optionEnable.value = "true";
+    optionEnable.textContent = "Enable";
+
+    const optionDisable = document.createElement("option");
+    optionDisable.value = "false";
+    optionDisable.textContent = "Disable";
+
+    filterSelect.appendChild(optionInherit);
+    filterSelect.appendChild(optionEnable);
+    filterSelect.appendChild(optionDisable);
+
+    // Set current value
+    if (entry.defaultFilterEnabled === true) {
+      filterSelect.value = "true";
+    } else if (entry.defaultFilterEnabled === false) {
+      filterSelect.value = "false";
+    } else {
+      filterSelect.value = "inherit";
+    }
+
+    filterSelect.addEventListener("change", () => {
+      if (filterSelect.value === "true") {
+        siteEntries[index].defaultFilterEnabled = true;
+      } else if (filterSelect.value === "false") {
+        siteEntries[index].defaultFilterEnabled = false;
+      } else {
+        siteEntries[index].defaultFilterEnabled = undefined;
+      }
+    });
+
+    filterRow.appendChild(filterLabel);
+    filterRow.appendChild(filterSelect);
+
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.className = "remove";
@@ -153,6 +212,7 @@ const renderSiteEntries = () => {
 
     row.appendChild(hostInput);
     row.appendChild(selectorsInput);
+    row.appendChild(filterRow);
     row.appendChild(removeButton);
     siteList.appendChild(row);
   });
@@ -160,12 +220,13 @@ const renderSiteEntries = () => {
 
 const hydrate = async () => {
   try {
-    const [storedSelectors, storedHidden, storedSites, storedTheme] =
+    const [storedSelectors, storedHidden, storedSites, storedTheme, storedDefaultFilter] =
       await Promise.all([
         getCustomSelectors(),
         getIsHidden(),
-        getSiteSelectors(),
+        getSiteConfigs(),
         getTheme(),
+        getDefaultFilterEnabled(),
       ]);
 
     if (globalSelectorsInput) {
@@ -173,10 +234,16 @@ const hydrate = async () => {
     }
 
     hidden = storedHidden;
-    siteEntries = Object.entries(storedSites).map(([host, selectors]) => ({
+    defaultFilterEnabled = storedDefaultFilter;
+    siteEntries = Object.entries(storedSites).map(([host, config]) => ({
       host,
-      selectors,
+      selectors: config.selectors || "",
+      defaultFilterEnabled: config.defaultFilterEnabled,
     }));
+
+    if (defaultFilterToggle) {
+      defaultFilterToggle.checked = defaultFilterEnabled;
+    }
 
     applyTheme(storedTheme);
     renderVisibility();
@@ -209,28 +276,33 @@ const handleSave = async () => {
     ? normalizeSelectors(globalSelectorsInput.value)
     : "";
 
-  const siteMap = siteEntries.reduce<SiteSelectorMap>((acc, entry) => {
+  const siteMap = siteEntries.reduce<SiteConfigMap>((acc, entry) => {
     const host = normalizeHost(entry.host);
     if (!host) return acc;
-    const normalized = normalizeSelectors(entry.selectors);
-    if (!normalized) return acc;
-    acc[host] = normalized;
+    const normalizedSelectors = normalizeSelectors(entry.selectors);
+    // Include entry if it has selectors OR a defaultFilterEnabled override
+    if (!normalizedSelectors && entry.defaultFilterEnabled === undefined) return acc;
+    acc[host] = {
+      selectors: normalizedSelectors || undefined,
+      defaultFilterEnabled: entry.defaultFilterEnabled,
+    };
     return acc;
   }, {});
 
   try {
     await Promise.all([
       setCustomSelectors(normalizedGlobal),
-      setSiteSelectors(siteMap),
+      setSiteConfigs(siteMap),
     ]);
 
     if (globalSelectorsInput) {
       globalSelectorsInput.value = normalizedGlobal;
     }
 
-    siteEntries = Object.entries(siteMap).map(([host, selectors]) => ({
+    siteEntries = Object.entries(siteMap).map(([host, config]) => ({
       host,
-      selectors,
+      selectors: config.selectors || "",
+      defaultFilterEnabled: config.defaultFilterEnabled,
     }));
     renderSiteEntries();
     setSaveStatus("Saved");
@@ -271,6 +343,13 @@ if (examplesToggle && examplesTooltip) {
     if (examplesLabel) {
       examplesLabel.textContent = isOpen ? "Close" : "Help";
     }
+  });
+}
+
+if (defaultFilterToggle) {
+  defaultFilterToggle.addEventListener("change", async () => {
+    defaultFilterEnabled = defaultFilterToggle.checked;
+    await setDefaultFilterEnabled(defaultFilterEnabled);
   });
 }
 

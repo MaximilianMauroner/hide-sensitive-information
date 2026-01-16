@@ -1,4 +1,4 @@
-import { getIsHidden, setIsHidden } from "./utils";
+import { getIsHidden, setActionStatusIcon, setIsHidden } from "./utils";
 
 chrome.runtime.onInstalled.addListener(() => {
   setIsHidden(false).catch(console.log);
@@ -7,13 +7,7 @@ chrome.runtime.onInstalled.addListener(() => {
 const syncBadge = async () => {
   try {
     const hidden = await getIsHidden();
-    if (chrome.action?.setBadgeText) {
-      chrome.action.setBadgeText({ text: hidden ? "ON" : "OFF" });
-      chrome.action.setBadgeBackgroundColor({
-        color: hidden ? "#10b981" : "#ef4444",
-      });
-      chrome.action.setBadgeTextColor({ color: "#0b0b0f" });
-    }
+    await setActionStatusIcon(hidden);
   } catch (error) {
     console.log("Failed to sync badge state", error);
   }
