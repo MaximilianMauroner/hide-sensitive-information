@@ -3,7 +3,7 @@
   "manifest_version": 3,
   "version": "0.0.1",
   "description": "Hide fields on a website that contain sensitive information.",
-  "permissions": ["storage", "scripting", "tabs", "activeTab"],
+  "permissions": ["storage", "tabs"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -12,10 +12,9 @@
     }
   ],
   "action": {
-    "default_title": "Extension action title",
+    "default_title": "Hide Sensitive Information",
     "default_popup": "popup/index.html"
   },
-  "options_page": "options/index.html",
   "background": {
     "service_worker": "background.js"
   },

@@ -2,16 +2,74 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./main.css" />
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./main.css" />
+  <title>Hide Sensitive Information</title>
 </head>
 
 <body>
-    <div id="root"></div>
+  <main class="popup">
+    <header class="header">
+      <div class="brand">
+        <span class="eyebrow">Privacy Tools</span>
+        <h1 class="title">Hide Sensitive Info</h1>
+        <p class="subtitle">Mask fields across the web with precision controls.</p>
+      </div>
+      <div class="header-actions">
+        <button id="examples-toggle" class="hint-trigger" type="button" aria-expanded="false">
+          <span class="hint-label">Help</span>
+          <span class="hint-icon" aria-hidden="true">?</span>
+        </button>
+        <button id="theme-toggle" class="theme-toggle" type="button">Dark</button>
+        <div id="examples-tooltip" class="tooltip" role="tooltip">
+          <div class="tooltip-title">Examples</div>
+          <pre class="code-block">input[name="apiKey"]
+textarea#notes
+[data-sensitive="true"]</pre>
+        </div>
+      </div>
+    </header>
 
-    <script type="module" src="index.js"></script>
+    <section class="card">
+      <div class="status-row">
+        <div>
+          <h2>Masking</h2>
+          <p>Applies to open tabs and future pages.</p>
+        </div>
+        <span id="visibility-label" class="pill">Loading</span>
+      </div>
+      <button id="toggle-button" class="button primary" type="button">Loading...</button>
+    </section>
+
+    <section class="card">
+      <div class="field">
+        <label for="global-selectors">Global custom selectors</label>
+        <textarea id="global-selectors" class="textarea" rows="2"
+          placeholder="input[name='accountNumber'], .user-email"></textarea>
+        <span class="help">Comma or newline separated CSS selectors. Applies everywhere.</span>
+      </div>
+
+      <div class="site-header">
+        <div>
+          <h2>Per-site selectors</h2>
+          <p class="help">Only apply on matching hostnames.</p>
+        </div>
+        <button id="add-site" class="button pill-button" type="button">Add site</button>
+      </div>
+
+      <div id="site-list" class="site-list" style="margin-top:10px;"></div>
+
+      <div class="actions">
+        <button id="save-button" class="button inline" type="button">Save changes</button>
+        <span id="save-status" class="status"></span>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module" src="index.js"></script>
 </body>
 
 </html>

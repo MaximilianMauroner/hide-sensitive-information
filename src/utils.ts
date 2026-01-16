@@ -1,23 +1,3 @@
-import elementReady, { type Options } from "element-ready";
-
-export function $<T extends Element>(selector: string) {
-  return document.querySelector<T>(selector);
-}
-
-export function $$<T extends Element>(selector: string) {
-  return document.querySelectorAll<T>(selector);
-}
-
-export const waitFor = async (duration = 1000) =>
-  new Promise((resolve) => setTimeout(resolve, duration));
-
-export const waitForElement = async (selector: string, options?: Options) => {
-  return elementReady(selector, {
-    stopOnDomReady: false,
-    ...options,
-  });
-};
-
 export const getCurrentTab = async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
@@ -49,6 +29,13 @@ export const getIsHidden = async (): Promise<boolean> => {
 
 export const setIsHidden = async (hidden: boolean) => {
   await storage.set("isHidden", hidden);
+  if (chrome.action?.setBadgeText) {
+    chrome.action.setBadgeText({ text: hidden ? "ON" : "OFF" });
+    chrome.action.setBadgeBackgroundColor({
+      color: hidden ? "#10b981" : "#ef4444",
+    });
+    chrome.action.setBadgeTextColor({ color: "#0b0b0f" });
+  }
   // Broadcast to tabs but swallow any runtime.lastError via callback so callers
   // don't observe unhandled promise rejections when a tab lacks a receiver.
   chrome.tabs.query({}, (tabs) => {
@@ -70,4 +57,38 @@ export const setIsHidden = async (hidden: boolean) => {
       }
     });
   });
+};
+
+export const getCustomSelectors = async (): Promise<string> => {
+  const value = await storage.get("customSelectors");
+  return typeof value === "string" ? value : "";
+};
+
+export const setCustomSelectors = async (selectors: string) => {
+  await storage.set("customSelectors", selectors);
+};
+
+export type SiteSelectorMap = Record<string, string>;
+
+export const getSiteSelectors = async (): Promise<SiteSelectorMap> => {
+  const value = await storage.get("siteSelectors");
+  if (value && typeof value === "object") {
+    return value as SiteSelectorMap;
+  }
+  return {};
+};
+
+export const setSiteSelectors = async (selectors: SiteSelectorMap) => {
+  await storage.set("siteSelectors", selectors);
+};
+
+export type ThemeMode = "light" | "dark";
+
+export const getTheme = async (): Promise<ThemeMode> => {
+  const value = await storage.get("theme");
+  return value === "dark" ? "dark" : "light";
+};
+
+export const setTheme = async (theme: ThemeMode) => {
+  await storage.set("theme", theme);
 };
