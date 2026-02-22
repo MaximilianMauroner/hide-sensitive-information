@@ -18,7 +18,7 @@
         <p class="subtitle">Mask fields across the web with precision controls.</p>
       </div>
       <div class="header-actions">
-        <button id="examples-toggle" class="hint-trigger" type="button" aria-expanded="false">
+        <button id="examples-toggle" class="hint-trigger" type="button" aria-expanded="false" aria-controls="examples-tooltip">
           <span class="hint-label">Help</span>
           <span class="hint-icon" aria-hidden="true">?</span>
         </button>
@@ -63,11 +63,11 @@ textarea#notes
         <button id="add-site" class="button pill-button" type="button">Add site</button>
       </div>
 
-      <div id="site-list" class="site-list" style="margin-top:10px;"></div>
+      <div id="site-list" class="site-list"></div>
 
       <div class="actions">
         <button id="save-button" class="button inline" type="button">Save changes</button>
-        <span id="save-status" class="status"></span>
+        <span id="save-status" class="status" role="status" aria-live="polite"></span>
       </div>
     </section>
 

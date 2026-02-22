@@ -106,6 +106,11 @@ body {
   box-shadow: 0 6px 12px rgba(15, 23, 42, 0.1);
 }
 
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 2px;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -232,6 +237,11 @@ html[data-theme="dark"] .button.primary.is-off {
   opacity: 0.6;
 }
 
+.button:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 2px;
+}
+
 .field {
   display: grid;
   gap: 6px;
@@ -252,7 +262,19 @@ html[data-theme="dark"] .button.primary.is-off {
   font-family: var(--font-sans);
   background: var(--surface-strong);
   color: var(--ink);
-  outline: none;
+}
+
+.input:focus-visible,
+.textarea:focus-visible,
+.site-filter-select:focus-visible {
+  border-color: var(--accent-3);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+html[data-theme="dark"] .input:focus-visible,
+html[data-theme="dark"] .textarea:focus-visible,
+html[data-theme="dark"] .site-filter-select:focus-visible {
+  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.35);
 }
 
 .textarea {
@@ -268,6 +290,7 @@ html[data-theme="dark"] .button.primary.is-off {
 .site-list {
   display: grid;
   gap: 10px;
+  margin-top: 10px;
 }
 
 .site-row {
@@ -291,6 +314,17 @@ html[data-theme="dark"] .button.primary.is-off {
   justify-self: flex-start;
 }
 
+.site-row .remove:focus-visible,
+.hint-trigger:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 2px;
+}
+
+.site-field-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
 .site-filter-row {
   display: flex;
   align-items: center;
@@ -312,12 +346,7 @@ html[data-theme="dark"] .button.primary.is-off {
   font-family: var(--font-sans);
   background: var(--surface);
   color: var(--ink);
-  outline: none;
   cursor: pointer;
-}
-
-.site-filter-select:focus {
-  border-color: var(--accent-3);
 }
 
 .actions {
