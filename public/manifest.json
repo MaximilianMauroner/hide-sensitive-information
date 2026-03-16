@@ -3,6 +3,7 @@
   "manifest_version": 3,
   "version": "0.0.1",
   "description": "Hide fields on a website that contain sensitive information.",
+  "homepage_url": "https://github.com/MaximilianMauroner/hide-sensitive-information",
   "permissions": ["storage", "tabs"],
   "content_scripts": [
     {

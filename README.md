@@ -1,6 +1,6 @@
 # Hide Sensitive Information
 
-A Chrome extension that automatically detects and masks sensitive information like passwords, emails, credit cards, and tokens on any website. Keep your screen-shares and recordings private.
+A browser extension for Chrome and Firefox that automatically detects and masks sensitive information like passwords, emails, credit cards, and tokens on any website. Keep your screen-shares and recordings private.
 
 ## Features
 
@@ -8,7 +8,7 @@ A Chrome extension that automatically detects and masks sensitive information li
 - **Custom CSS Selectors**: Add global and per-site custom selectors to mask specific elements
 - **Real-time Masking**: Monitors dynamic content changes with MutationObserver for instant protection
 - **Theme Switcher**: Light and dark mode support with persistent preferences
-- **Chrome Storage Sync**: Settings synchronized across all your devices
+- **Storage Sync**: Settings synchronized across supported browsers
 - **SPA Navigation Support**: Detects client-side navigation (pushState/replaceState) and reapplies masking
 - **Toggle On/Off**: Quickly enable or disable masking via the browser popup
 - **Smart Detection**: Multiple detection methods including input types, autocomplete attributes, keyword matching, and regex patterns
@@ -19,7 +19,7 @@ A Chrome extension that automatically detects and masks sensitive information li
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/hide-sensitive-information.git
+git clone https://github.com/MaximilianMauroner/hide-sensitive-information.git
 cd hide-sensitive-information
 
 # Install dependencies
@@ -36,11 +36,18 @@ bun run build
 3. Click "Load unpacked"
 4. Select the `build/` directory from this project
 
+### Load in Firefox
+
+1. Run `bun run build`
+2. Open `about:debugging#/runtime/this-firefox`
+3. Click "Load Temporary Add-on"
+4. Select the `build-firefox/manifest.json` file from this project
+
 ## Usage
 
 ### Toggle Masking
 
-Click the extension icon in your Chrome toolbar to open the popup, then click the toggle button to hide or show sensitive information on the current page.
+Click the extension icon in your browser toolbar to open the popup, then click the toggle button to hide or show sensitive information on the current page.
 
 ### Add Custom Selectors
 
@@ -169,7 +176,7 @@ bun run dev
 # Build for production
 bun run build
 
-# Package for distribution (creates .zip file)
+# Package for distribution (creates a Chrome .zip and Firefox .xpi)
 bun run pack
 
 # Run tests
@@ -179,7 +186,7 @@ bun test
 bun test --watch
 
 # Lint and format code
-bunx @biomejs/biome check --write src/
+bunx @biomejs/biome check --write .
 ```
 
 ### Hot Reload During Development
@@ -209,7 +216,7 @@ Run tests with `bun test` or enable watch mode with `bun test --watch`.
 ## Configuration
 
 ### Storage Model
-All settings are stored using Chrome's `chrome.storage.sync` API, which:
+All settings are stored using the WebExtension `storage.sync` API, which:
 - Synchronizes across devices when signed into Chrome
 - Persists data across browser sessions
 - Has a limit of 100KB total storage
@@ -244,7 +251,6 @@ Theme preference is saved to Chrome storage and reapplied on popup open.
 
 ### Planned
 - [ ] Publish to Chrome Web Store
-- [ ] Firefox Add-ons support
 - [ ] Fix iframe content masking where possible
 - [ ] Performance optimizations for large pages
 - [ ] Additional sensitive data patterns (IP addresses, MAC addresses, etc.)
@@ -258,7 +264,7 @@ Contributions are welcome! Please follow these guidelines:
 1. **Fork the repository** and create a feature branch
 2. **Follow code style**: Use Biome for consistent formatting
    ```bash
-   bunx @biomejs/biome check --write src/
+   bunx @biomejs/biome check --write .
    ```
 3. **Write tests**: Add tests for new functionality in `src/__tests__/`
 4. **Test thoroughly**: Ensure `bun test` passes and manually test the extension
@@ -276,7 +282,7 @@ bun run dev
 bun test
 
 # Format and lint
-bunx @biomejs/biome check --write src/
+bunx @biomejs/biome check --write .
 
 # Commit and push
 git add .
@@ -293,7 +299,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 This extension:
 - Does NOT collect or transmit any data
 - Does NOT track user behavior
-- Only stores configuration locally in Chrome storage
+- Only stores configuration in browser extension storage
 - Runs entirely offline after installation
 
 All sensitive information processing happens locally in your browser.

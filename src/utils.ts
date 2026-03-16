@@ -1,5 +1,15 @@
+const extensionApi =
+	(
+		globalThis as typeof globalThis & {
+			browser?: typeof chrome;
+		}
+	).browser ?? chrome;
+
 export const getCurrentTab = async () => {
-	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	const [tab] = await extensionApi.tabs.query({
+		active: true,
+		currentWindow: true,
+	});
 	return tab;
 };
 
@@ -8,13 +18,13 @@ export const getCurrentTab = async () => {
  */
 export const storage = {
 	set: async (key: string, value: unknown) => {
-		return chrome.storage.sync
+		return extensionApi.storage.sync
 			.set({ [key]: value })
 			.then(() => value)
 			.catch(console.log);
 	},
 	get: async (key: string) => {
-		return chrome.storage.sync
+		return extensionApi.storage.sync
 			.get(key)
 			.then((result) => result[key])
 			.catch(console.log);
@@ -49,11 +59,9 @@ const isValidTabUrl = (url?: string): boolean => {
 };
 
 const broadcastHiddenState = (hidden: boolean): Promise<void> => {
-	return new Promise((resolve) => {
-		// Set a timeout to prevent hanging if tabs don't respond
-		const timeout = setTimeout(() => resolve(), 2000);
-
-		chrome.tabs.query({}, (tabs) => {
+	return Promise.race([
+		(async () => {
+			const tabs = await extensionApi.tabs.query({});
 			const validTabs = tabs.filter(
 				(
 					tab,
@@ -63,46 +71,27 @@ const broadcastHiddenState = (hidden: boolean): Promise<void> => {
 				} => typeof tab.id === "number" && isValidTabUrl(tab.url),
 			);
 
-			if (validTabs.length === 0) {
-				clearTimeout(timeout);
-				resolve();
-				return;
-			}
-
-			let pending = validTabs.length;
-			let resolved = false;
-
-			const done = () => {
-				pending--;
-				if (pending === 0 && !resolved) {
-					resolved = true;
-					clearTimeout(timeout);
-					resolve();
-				}
-			};
-
-			for (const tab of validTabs) {
-				try {
-					chrome.tabs.sendMessage(
-						tab.id,
-						{ action: "change-hidden-mode", isHidden: hidden },
-						() => {
-							if (chrome.runtime.lastError) {
-								// ignore - tab likely has no content script
-							}
-							done();
-						},
-					);
-				} catch {
-					done();
-				}
-			}
-		});
-	});
+			await Promise.all(
+				validTabs.map(async (tab) => {
+					try {
+						await extensionApi.tabs.sendMessage(tab.id, {
+							action: "change-hidden-mode",
+							isHidden: hidden,
+						});
+					} catch {
+						// ignore - tab likely has no content script
+					}
+				}),
+			);
+		})(),
+		new Promise<void>((resolve) => {
+			setTimeout(resolve, 2000);
+		}),
+	]);
 };
 
 export const setActionStatusIcon = async (hidden: boolean) => {
-	if (!chrome.action?.setIcon) return;
+	if (!extensionApi.action?.setIcon) return;
 	const folder = hidden ? "/icons/on_icon" : "/icons/off_icon";
 	const path = {
 		"16": `${folder}/icon-16.png`,
@@ -111,14 +100,11 @@ export const setActionStatusIcon = async (hidden: boolean) => {
 		"128": `${folder}/icon-128.png`,
 	};
 
-	await new Promise<void>((resolve) => {
-		chrome.action.setIcon({ path }, () => {
-			if (chrome.runtime.lastError) {
-				console.log("Failed to set action icon:", chrome.runtime.lastError);
-			}
-			resolve();
-		});
-	});
+	try {
+		await extensionApi.action.setIcon({ path });
+	} catch (error) {
+		console.log("Failed to set action icon:", error);
+	}
 };
 
 export const getCustomSelectors = async (): Promise<string> => {

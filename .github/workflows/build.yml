@@ -36,5 +36,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: firefox-extension
-          path: release/*-firefox.zip
+          path: release/*-firefox.xpi
           if-no-files-found: error

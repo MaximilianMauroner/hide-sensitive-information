@@ -1,8 +1,8 @@
 # Privacy Policy
 
-Last updated: February 22, 2026
+Last updated: March 16, 2026
 
-This Privacy Policy applies to the Chrome extension **Hide Sensitive Information**.
+This Privacy Policy applies to the browser extension **Hide Sensitive Information** for Chrome and Firefox.
 
 ## What this extension does
 
@@ -23,6 +23,10 @@ To do its job, the extension reads webpage DOM content and form field metadata o
 
 This processing is local and transient. It is used only to mask content in-place.
 
+## Chrome Web Store Limited Use disclosure
+
+Website content and related user data processed by this extension is handled in accordance with the Chrome Web Store User Data Policy, including the Limited Use requirements. The extension uses that data only to detect and mask sensitive content in the page, and it does not transfer webpage content to our servers or use it for advertising, profiling, or any unrelated purpose.
+
 ## Information stored
 
 The extension stores settings in `chrome.storage.sync`:
@@ -33,7 +37,7 @@ The extension stores settings in `chrome.storage.sync`:
 - per-site filter overrides
 - theme preference
 
-These settings are stored by Chrome and may sync across the user's signed-in Chrome profile. We do not receive this data.
+These settings are stored by the browser's extension storage system and may sync across the user's signed-in browser profile. We do not receive this data.
 
 ## Permissions and why they are used
 
