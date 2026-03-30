@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "build": "bun run config/build.ts",
-    "dev": "bun run config/watch.ts --dir=src,public",
+    "dev": "bun run config/watch.ts --dir=src,public,assets",
     "pack": "bun run config/pack.ts",
+    "test-page": "bun run config/test-page.ts",
     "css": "postcss",
     "test": "bun test",
     "test:watch": "bun test --watch"

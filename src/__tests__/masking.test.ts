@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import "./setup";
-import { emailRegex, isSensitiveField } from "../shared";
+import {
+	collectSensitiveTextMatches,
+	containsSensitiveValue,
+	emailRegex,
+	isSensitiveField,
+} from "../shared";
 
 function createTestElement<T extends HTMLElement = HTMLElement>(
 	html: string,
@@ -185,5 +190,54 @@ describe("Email regex", () => {
 	test("is case insensitive", () => {
 		expect("User@Example.COM".match(emailRegex)).toBeTruthy();
 		expect("USER@EXAMPLE.COM".match(emailRegex)).toBeTruthy();
+	});
+});
+
+describe("Sensitive value detection", () => {
+	test("detects Stripe-style API keys", () => {
+		const stripeLikeApiKey = ["sk", "live", "1234567890abcdefghijklmnop"].join(
+			"_",
+		);
+		expect(containsSensitiveValue(stripeLikeApiKey)).toBe(true);
+	});
+
+	test("detects GitHub personal access tokens", () => {
+		expect(containsSensitiveValue("ghp_1234567890abcdefghijklmnopqrstuv")).toBe(
+			true,
+		);
+	});
+
+	test("detects JWT tokens", () => {
+		expect(
+			containsSensitiveValue(
+				"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50IjoidGVzdC11c2VyIn0.signatureToken123456",
+			),
+		).toBe(true);
+	});
+
+	test("detects AWS access keys", () => {
+		expect(containsSensitiveValue("AKIAIOSFODNN7EXAMPLE")).toBe(true);
+	});
+
+	test("returns false for regular text", () => {
+		expect(containsSensitiveValue("hello world")).toBe(false);
+		expect(containsSensitiveValue("build status: passing")).toBe(false);
+	});
+});
+
+describe("Sensitive text matching", () => {
+	test("collects both emails and API keys from visible text", () => {
+		const stripeLikeApiKey = ["sk", "live", "1234567890abcdefghijklmnop"].join(
+			"_",
+		);
+		const matches = collectSensitiveTextMatches(
+			`Email me at user@example.com or use ${stripeLikeApiKey}`,
+		);
+
+		expect(matches).toHaveLength(2);
+		expect(matches[0]?.original).toBe("user@example.com");
+		expect(matches[0]?.masked).toBe("****@***********");
+		expect(matches[1]?.original).toBe(stripeLikeApiKey);
+		expect(matches[1]?.masked).toContain("********");
 	});
 });

@@ -32,8 +32,15 @@ console.log(chalk.bold(defaultWatchMessage))
 
 const watchers: FSWatcher[] = [];
 
+const shouldIgnoreChange = (directory: string, filename?: string | null) => {
+  if (!filename || filename.endsWith(".DS_Store")) return true;
+  return directory === "./public" && filename.startsWith("icons/");
+};
+
 for (const directory of directoriesToWatch) {
   const watcher = watch(directory, { recursive: true }, async (_, filename) => {
+    if (shouldIgnoreChange(directory, filename)) return;
+
     console.log(chalk.bold.yellow.dim(`Changes detected in ${filename}`))
     
     await runBuild();

@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Hide Sensitive Information - Manual Test Page</title>
+		<link rel="stylesheet" href="/styles.css" />
+	</head>
+	<body>
+		<a class="skip-link" href="#main-content">Skip to main content</a>
+		<div class="noise"></div>
+		<header class="hero">
+			<div class="hero__copy">
+				<p class="eyebrow">Manual Test Harness</p>
+				<h1>Hide Sensitive Information</h1>
+				<p class="hero__lede">
+					Use this localhost page to verify which fields and text the extension
+					masks in a normal top-level document.
+				</p>
+			</div>
+			<div class="hero__status">
+				<div class="status-card">
+					<span class="status-card__label">Recommended flow</span>
+					<p>Load the unpacked extension, open this page, then toggle masking.</p>
+				</div>
+				<div class="status-card">
+					<span class="status-card__label">URL</span>
+					<p id="current-url">http://localhost:4173/</p>
+				</div>
+			</div>
+		</header>
+
+		<main class="layout" id="main-content">
+			<section class="panel panel--wide">
+				<div class="section-heading">
+					<p class="section-kicker">How To Read This Page</p>
+					<h2>Every fixture states the expected behavior.</h2>
+				</div>
+				<div class="expectation-grid">
+					<article class="expectation expectation--mask">
+						<h3>Should mask</h3>
+						<p>
+							Inputs, textareas, editable regions, or plain text matching the
+							extension heuristics.
+						</p>
+					</article>
+					<article class="expectation expectation--safe">
+						<h3>Should stay visible</h3>
+						<p>
+							Generic profile fields and neutral content without sensitive
+							patterns.
+						</p>
+					</article>
+					<article class="expectation expectation--custom">
+						<h3>Needs custom selector</h3>
+						<p>
+							These targets only mask when you add matching selectors in the
+							extension popup.
+						</p>
+					</article>
+				</div>
+			</section>
+
+			<section class="panel">
+				<div class="section-heading">
+					<p class="section-kicker">Static Detection</p>
+					<h2>Fields that should mask immediately</h2>
+				</div>
+
+				<div class="fixture-list">
+					<label class="fixture">
+						<span class="fixture__meta">
+							<strong>Password input</strong>
+							<em>Expected: should mask</em>
+						</span>
+						<input type="password" value="hunter2-super-secret" />
+					</label>
+
+					<label class="fixture">
+						<span class="fixture__meta">
+							<strong>Email input</strong>
+							<em>Expected: should mask</em>
+						</span>
+						<input type="email" value="jane.doe@example.com" />
+					</label>
+
+					<label class="fixture">
+						<span class="fixture__meta">
+							<strong>Telephone input</strong>
+							<em>Expected: should mask</em>
+						</span>
+						<input type="tel" value="+1 415 555 0108" />
+					</label>
+
+					<label class="fixture">
+						<span class="fixture__meta">
+							<strong>Autocomplete: current-password</strong>
+							<em>Expected: should mask</em>
+						</span>
+						<input
+							type="text"
+							autocomplete="current-password"
+							value="rosebud-vault"
+						/>
+					</label>
+
+					<label class="fixture">
+						<span class="fixture__meta">
+							<strong>Autocomplete: cc-number</strong>
+							<em>Expected: should mask</em>
+						</span>
+						<input
+							type="text"
+							autocomplete="cc-number"
+							value="4242 4242 4242 4242"
+						/>
+					</label>
+
+					<label class="fixture">
+						<span class="fixture__meta">
+							<strong>Autocomplete: one-time-code</strong>
+							<em>Expected: should mask</em>
+						</span>
+						<input type="text" autocomplete="one-time-code" value="981734" />
+					</label>
+
+					<label class="fixture">
+						<span class="fixture__meta">
+							<strong>Keyword in name</strong>
+							<em>Expected: should mask</em>
+						</span>
+						<input type="text" name="api-token" value="sk_live_1234567890abcd" />
+					</label>
+
+					<label class="fixture">
+						<span class="fixture__meta">
+							<strong>Keyword in placeholder</strong>
+							<em>Expected: should mask</em>
+						</span>
+						<input
+							type="text"
+							placeholder="Enter your password"
+							value="swordfish-1995"
+						/>
+					</label>
+
+					<label class="fixture">
+						<span class="fixture__meta">
+							<strong>Textarea with email value</strong>
+							<em>Expected: should mask</em>
+						</span>
+						<textarea rows="3">
+Reach me privately at launch-control@example.com for deployment access.
+						</textarea>
+					</label>
+
+					<div class="fixture fixture--editable">
+						<div class="fixture__meta">
+							<strong>Contenteditable with sensitive label</strong>
+							<em>Expected: should mask</em>
+						</div>
+						<div
+							class="editable-card"
+							contenteditable="true"
+							aria-label="Secret token"
+							spellcheck="false"
+						>
+							pk_live_feedfacecafe123456789
+						</div>
+					</div>
+
+					<div class="fixture fixture--text">
+						<div class="fixture__meta">
+							<strong>Plain text email in DOM</strong>
+							<em>Expected: should mask</em>
+						</div>
+						<p class="text-sample">
+							Incident notifications go to midnight.ops@example.com and
+							security.review@example.org.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="panel">
+				<div class="section-heading">
+					<p class="section-kicker">Safe Cases</p>
+					<h2>Fields that should remain visible</h2>
+				</div>
+
+				<div class="fixture-list">
+					<label class="fixture fixture--safe">
+						<span class="fixture__meta">
+							<strong>Username</strong>
+							<em>Expected: should stay visible</em>
+						</span>
+						<input type="text" name="username" value="maximilian" />
+					</label>
+
+					<label class="fixture fixture--safe">
+						<span class="fixture__meta">
+							<strong>Full name</strong>
+							<em>Expected: should stay visible</em>
+						</span>
+						<input type="text" name="full-name" value="Max Mauroner" />
+					</label>
+
+					<label class="fixture fixture--safe">
+						<span class="fixture__meta">
+							<strong>Address</strong>
+							<em>Expected: should stay visible</em>
+						</span>
+						<input type="text" name="address" value="101 Main Street" />
+					</label>
+
+					<div class="fixture fixture--text fixture--safe">
+						<div class="fixture__meta">
+							<strong>Neutral paragraph</strong>
+							<em>Expected: should stay visible</em>
+						</div>
+						<p class="text-sample">
+							The weekly product review starts at 14:00 in Studio B and covers
+							launch prep, QA notes, and release timing.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="panel">
+				<div class="section-heading">
+					<p class="section-kicker">Custom Selectors</p>
+					<h2>Targets for popup-configured selector rules</h2>
+				</div>
+				<div class="fixture-list">
+					<div class="fixture fixture--custom-target">
+						<div class="fixture__meta">
+							<strong><code>.billing-email</code></strong>
+							<em>Expected: masks only after adding a matching selector</em>
+						</div>
+						<div class="selector-target billing-email">
+							billing-contact@company-finance.example
+						</div>
+					</div>
+
+					<div class="fixture fixture--custom-target">
+						<div class="fixture__meta">
+							<strong><code>#credit-card-field</code></strong>
+							<em>Expected: masks only after adding a matching selector</em>
+						</div>
+						<div class="selector-target" id="credit-card-field">
+							5454 5454 5454 5454
+						</div>
+					</div>
+
+					<div class="fixture fixture--custom-target">
+						<div class="fixture__meta">
+							<strong><code>[data-testid="secret-token"]</code></strong>
+							<em>Expected: masks only after adding a matching selector</em>
+						</div>
+						<div class="selector-target" data-testid="secret-token">
+							ghp_0123456789exampletoken
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="panel panel--wide">
+				<div class="section-heading">
+					<p class="section-kicker">Dynamic Behavior</p>
+					<h2>Mutation observer and SPA navigation checks</h2>
+				</div>
+
+				<div class="action-grid">
+					<button class="action-button" id="add-sensitive-field" type="button">
+						Append sensitive input
+					</button>
+					<button class="action-button" id="add-sensitive-text" type="button">
+						Append plain text email
+					</button>
+					<button class="action-button" id="mutate-existing-text" type="button">
+						Mutate existing text
+					</button>
+						<button class="action-button" id="push-state" type="button">
+							Push State
+						</button>
+						<button class="action-button" id="replace-state" type="button">
+							Replace State
+						</button>
+				</div>
+
+				<div class="dynamic-layout">
+					<div class="dynamic-box">
+						<h3>Mutation target</h3>
+						<p>
+							Expected: newly inserted sensitive elements or text should mask
+							without a refresh.
+						</p>
+						<div id="dynamic-fixtures" class="dynamic-fixtures"></div>
+					</div>
+
+					<div class="dynamic-box">
+						<h3>Existing text mutation target</h3>
+						<p>
+							Expected: after mutation, the inserted email should be masked.
+						</p>
+						<p id="mutable-text" class="text-sample">
+							Release notes are ready for the product walkthrough.
+						</p>
+					</div>
+
+					<div class="dynamic-box">
+						<h3>Navigation state</h3>
+						<p>
+							Expected: masking remains applied after history changes trigger
+							reprocessing.
+						</p>
+						<div class="route-card">
+							<strong>Current path</strong>
+							<p id="route-indicator">/</p>
+						</div>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<script>
+			const dynamicFixtures = document.getElementById("dynamic-fixtures");
+			const mutableText = document.getElementById("mutable-text");
+			const routeIndicator = document.getElementById("route-indicator");
+			const currentUrl = document.getElementById("current-url");
+
+			const syncLocation = () => {
+				routeIndicator.textContent = window.location.pathname + window.location.search;
+				currentUrl.textContent = window.location.href;
+			};
+
+			document.getElementById("add-sensitive-field").addEventListener("click", () => {
+				const label = document.createElement("label");
+				label.className = "fixture";
+				label.innerHTML = `
+					<span class="fixture__meta">
+						<strong>Dynamically added API token field</strong>
+						<em>Expected: should mask after insertion</em>
+					</span>
+					<input type="text" name="api-token" value="dyn_live_token_987654321" />
+				`;
+				dynamicFixtures.appendChild(label);
+			});
+
+			document.getElementById("add-sensitive-text").addEventListener("click", () => {
+				const paragraph = document.createElement("p");
+				paragraph.className = "text-sample";
+				paragraph.textContent =
+					"Escalations should be sent to urgent-response@example.com immediately.";
+				dynamicFixtures.appendChild(paragraph);
+			});
+
+			document
+				.getElementById("mutate-existing-text")
+				.addEventListener("click", () => {
+					mutableText.textContent =
+						"Release notes are ready. Confirm rollout with approvals@example.net before shipping.";
+				});
+
+			document.getElementById("push-state").addEventListener("click", () => {
+				const nextPath = `/review-${Date.now()}?mode=push`;
+				history.pushState({ mode: "push" }, "", nextPath);
+				syncLocation();
+			});
+
+			document.getElementById("replace-state").addEventListener("click", () => {
+				const nextPath = `/review-${Date.now()}?mode=replace`;
+				history.replaceState({ mode: "replace" }, "", nextPath);
+				syncLocation();
+			});
+
+			window.addEventListener("popstate", syncLocation);
+			syncLocation();
+		</script>
+	</body>
+</html>

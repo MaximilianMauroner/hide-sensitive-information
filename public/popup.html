@@ -13,18 +13,29 @@
   <main class="popup">
     <header class="header">
       <div class="brand">
-        <span class="eyebrow">Privacy Tools</span>
-        <h1 class="title">Hide Sensitive Info</h1>
-        <p class="subtitle">Mask fields across the web with precision controls.</p>
+        <div class="brand-row">
+          <svg class="brand-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <line x1="8" y1="11" x2="16" y2="11" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+          <div>
+            <h1 class="title">Hide Sensitive Info</h1>
+            <p class="subtitle">Precision masking for the web</p>
+          </div>
+        </div>
       </div>
       <div class="header-actions">
-        <button id="examples-toggle" class="hint-trigger" type="button" aria-expanded="false" aria-controls="examples-tooltip">
-          <span class="hint-label">Help</span>
+        <button id="examples-toggle" class="icon-btn" type="button" aria-expanded="false"
+          aria-controls="examples-tooltip" aria-label="Help">
+          <span class="hint-label" style="display:none"></span>
           <span class="hint-icon" aria-hidden="true">?</span>
         </button>
-        <button id="theme-toggle" class="theme-toggle" type="button">Dark</button>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme">
+          <svg class="theme-icon theme-icon--light" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="theme-icon theme-icon--dark" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
         <div id="examples-tooltip" class="tooltip" role="tooltip">
-          <div class="tooltip-title">Examples</div>
+          <div class="tooltip-title">Selector examples</div>
           <pre class="code-block">input[name="apiKey"]
 textarea#notes
 [data-sensitive="true"]</pre>
@@ -32,45 +43,90 @@ textarea#notes
       </div>
     </header>
 
-    <section class="card">
-      <div class="status-row">
-        <div>
+    <!-- ── Masking Toggle ────────────────────────────── -->
+    <section class="card card--hero" style="--delay: 0">
+      <div class="masking-row">
+        <div class="masking-info">
           <h2>Masking</h2>
-          <p>Applies to open tabs and future pages.</p>
+          <p>All open tabs &amp; future pages</p>
         </div>
-        <span id="visibility-label" class="pill">Loading</span>
+        <button id="toggle-button" class="switch" type="button" role="switch" aria-checked="false">
+          <span class="switch__track">
+            <span class="switch__thumb"></span>
+          </span>
+        </button>
       </div>
-      <button id="toggle-button" class="button primary" type="button">Loading...</button>
+      <span id="visibility-label" class="masking-status">Loading</span>
       <label class="checkbox-row">
         <input type="checkbox" id="default-filter-toggle" checked />
-        <span>Enable default filters (emails, passwords, etc.)</span>
+        <span>Auto-filter emails, passwords, keys</span>
       </label>
     </section>
 
-    <section class="card">
-      <div class="field">
-        <label for="global-selectors">Global custom selectors</label>
-        <textarea id="global-selectors" class="textarea" rows="2"
-          placeholder="input[name='accountNumber'], .user-email"></textarea>
-        <span class="help">Comma or newline separated CSS selectors. Applies everywhere.</span>
+    <!-- ── Element Picker ────────────────────────────── -->
+    <section id="picker-card" class="card" style="--delay: 1">
+      <div class="picker-row">
+        <div class="picker-info">
+          <h2>
+            <svg class="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
+            Element picker
+          </h2>
+          <p id="picker-help" class="help">Click any element on the page to mask it</p>
+        </div>
+        <button id="pick-element" class="button pick-btn" type="button">
+          Pick
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
+    </section>
+
+    <!-- ── Selectors ─────────────────────────────────── -->
+    <section class="card card--selectors" style="--delay: 2">
+
+      <!-- Current page context -->
+      <div id="current-page" class="current-page">
+        <div class="current-page__header">
+          <svg class="current-page__icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span id="current-page-host" class="current-page__host">Loading...</span>
+        </div>
+        <p id="current-page-summary" class="current-page__summary">Detecting active rules...</p>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="field">
+        <label for="global-selectors" class="field-label">
+          <svg class="inline-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Global selectors
+        </label>
+        <textarea id="global-selectors" class="textarea" rows="2"
+          placeholder="input[name='accountNumber'], .user-email..."></textarea>
+        <span class="help">CSS selectors applied on every site</span>
+      </div>
+
+      <div class="section-divider"></div>
 
       <div class="site-header">
         <div>
-          <h2>Per-site selectors</h2>
-          <p class="help">Only apply on matching hostnames.</p>
+          <h2 class="field-label">
+            <svg class="inline-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Per-site rules
+          </h2>
+          <p class="help">Override or extend rules for specific sites</p>
         </div>
-        <button id="add-site" class="button pill-button" type="button">Add site</button>
+        <button id="add-site" class="button ghost-btn" type="button">+ Add site</button>
       </div>
 
       <div id="site-list" class="site-list"></div>
 
       <div class="actions">
-        <button id="save-button" class="button inline" type="button">Save changes</button>
+        <button id="save-button" class="button save-btn" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save changes
+        </button>
         <span id="save-status" class="status" role="status" aria-live="polite"></span>
       </div>
     </section>
-
   </main>
 
   <script type="module" src="index.js"></script>

@@ -4,6 +4,7 @@ import { cp, rm, writeFile } from "node:fs/promises";
 
 import "./cwd";
 import manifest from "../public/manifest.json";
+import { generateIcons } from "./icons";
 import { getChromeManifest, getFirefoxManifest } from "./manifest";
 
 const chromeOutdir = "./build";
@@ -22,6 +23,8 @@ const resolveEntryPoints = (entrypoints: string[]) => {
 
 const publicFolder = "./public";
 
+await generateIcons();
+
 await rm(chromeOutdir, { recursive: true, force: true });
 await rm(firefoxOutdir, { recursive: true, force: true });
 
@@ -36,6 +39,7 @@ await Bun.build({
   entrypoints: resolveEntryPoints([
     ...scripts,
     service_worker,
+    "pickerRuntime.ts",
     "popup/index.ts",
   ]),
   outdir: chromeOutdir,

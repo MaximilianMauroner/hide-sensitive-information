@@ -1,4 +1,10 @@
-import { emailRegex, isSensitiveField, parseSelectors } from "./shared";
+import { startPicker } from "./picker";
+import {
+	collectSensitiveTextMatches,
+	containsSensitiveValue,
+	isSensitiveField,
+	parseSelectors,
+} from "./shared";
 import {
 	type SiteConfig,
 	type SiteConfigMap,
@@ -329,6 +335,9 @@ chrome.runtime.onMessage.addListener((request) => {
 	if (request.action === "change-hidden-mode") {
 		handleState(request.isHidden);
 	}
+	if (request.action === "start-element-picker") {
+		startPicker();
+	}
 });
 
 function handleState(hidden: boolean) {
@@ -444,14 +453,17 @@ function setupInputListener() {
 		}
 
 		if (target instanceof HTMLTextAreaElement) {
-			if (isSensitiveField(target) || emailRegex.test(target.value)) {
+			if (isSensitiveField(target) || containsSensitiveValue(target.value)) {
 				maskElement(target);
 			}
 			return;
 		}
 
 		if (target instanceof HTMLElement && target.isContentEditable) {
-			if (isSensitiveField(target)) {
+			if (
+				isSensitiveField(target) ||
+				containsSensitiveValue(target.textContent)
+			) {
 				maskElement(target);
 			}
 		}
@@ -462,7 +474,7 @@ function shouldMaskInput(input: HTMLInputElement) {
 	// Skip hidden inputs - they're not visible to the user
 	if (input.type === "hidden") return false;
 	if (isSensitiveField(input)) return true;
-	return input.value ? emailRegex.test(input.value) : false;
+	return input.value ? containsSensitiveValue(input.value) : false;
 }
 
 function applyStyleMask(element: HTMLElement) {
@@ -572,14 +584,17 @@ function processSensitiveFields(root: Element | Document = document) {
 		}
 
 		if (field instanceof HTMLTextAreaElement) {
-			if (isSensitiveField(field) || emailRegex.test(field.value)) {
+			if (isSensitiveField(field) || containsSensitiveValue(field.value)) {
 				maskElement(field);
 			}
 			continue;
 		}
 
 		if (field instanceof HTMLElement && field.isContentEditable) {
-			if (isSensitiveField(field)) {
+			if (
+				isSensitiveField(field) ||
+				containsSensitiveValue(field.textContent)
+			) {
 				maskElement(field);
 			}
 		}
@@ -589,7 +604,7 @@ function processSensitiveFields(root: Element | Document = document) {
 function applyMasking(root: Element | Document = document): void {
 	if (useDefaultFilterForCurrentSite()) {
 		processSensitiveFields(root);
-		replaceEmailsInTextNodes(root, emailRegex);
+		replaceSensitiveTextNodes(root);
 	}
 
 	applyCustomSelectors(root);
@@ -600,11 +615,8 @@ function toggleSensitive(): void {
 	applyMasking(document);
 }
 
-// Function to safely traverse DOM and replace emails in text nodes only
-function replaceEmailsInTextNodes(
-	element: Element | Document | null,
-	regex: RegExp,
-): void {
+// Function to safely traverse DOM and replace sensitive text in text nodes only
+function replaceSensitiveTextNodes(element: Element | Document | null): void {
 	if (!element) return;
 
 	// If this is an Element, optionally skip SCRIPT/STYLE
@@ -620,14 +632,13 @@ function replaceEmailsInTextNodes(
 
 		if (node.nodeType === Node.TEXT_NODE) {
 			const current = node.nodeValue;
-			if (current && regex.test(current)) {
+			const matches = collectSensitiveTextMatches(current);
+			if (current && matches.length > 0) {
 				// Create a document fragment and replace matches with span elements
 				const frag = document.createDocumentFragment();
 				let lastIndex = 0;
-				const matcher = new RegExp(regex.source, "gi");
-				let match = matcher.exec(current);
-				while (match !== null) {
-					const index = match.index;
+				for (const match of matches) {
+					const index = match.start;
 					// text before match
 					if (index > lastIndex) {
 						frag.appendChild(
@@ -635,22 +646,15 @@ function replaceEmailsInTextNodes(
 						);
 					}
 
-					const matchedText = match[0];
-					const masked = matchedText
-						.split("@")
-						.map((part) => part.replace(/./g, "*"))
-						.join("@");
-
 					const span = document.createElement("span");
 					span.setAttribute(
 						textOriginalAttribute,
-						encodeURIComponent(matchedText),
+						encodeURIComponent(match.original),
 					);
-					span.textContent = masked;
+					span.textContent = match.masked;
 					frag.appendChild(span);
 
-					lastIndex = index + matchedText.length;
-					match = matcher.exec(current);
+					lastIndex = match.end;
 				}
 
 				// remaining text
@@ -665,7 +669,7 @@ function replaceEmailsInTextNodes(
 				}
 			}
 		} else if (node.nodeType === Node.ELEMENT_NODE) {
-			replaceEmailsInTextNodes(node as Element, regex);
+			replaceSensitiveTextNodes(node as Element);
 		}
 	}
 }
