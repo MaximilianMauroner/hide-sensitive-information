@@ -1,305 +1,353 @@
 # Hide Sensitive Information
 
-A browser extension for Chrome and Firefox that automatically detects and masks sensitive information like passwords, emails, credit cards, and tokens on any website. Keep your screen-shares and recordings private.
+Hide Sensitive Information is a Chrome and Firefox extension that masks sensitive fields and text directly in the page. It is designed for browsing, demos, recordings, and screen shares where private data should stay visible to you but not readable at a glance.
+
+All detection and masking runs locally in the browser. No page content is sent to a server.
+
+## Current Status
+
+- The extension codebase supports both Chrome and Firefox builds from the same source tree.
+- The popup currently includes:
+  - a global masking toggle,
+  - a global auto-detect toggle,
+  - global custom selectors,
+  - per-site rules with optional auto-detect overrides,
+  - an element picker for generating selectors from the current page,
+  - theme persistence, and
+  - current-page rule summaries.
+- CI packages release artifacts on pushes to `main`:
+  - Chrome: `.zip`
+  - Firefox: `.xpi`
+- The repository is currently set up primarily for unpacked/local installs and packaged release artifacts.
 
 ## Features
 
-- **Automatic Detection**: Identifies sensitive fields including passwords, emails, tokens, credit cards, SSNs, and phone numbers
-- **Custom CSS Selectors**: Add global and per-site custom selectors to mask specific elements
-- **Real-time Masking**: Monitors dynamic content changes with MutationObserver for instant protection
-- **Theme Switcher**: Light and dark mode support with persistent preferences
-- **Storage Sync**: Settings synchronized across supported browsers
-- **SPA Navigation Support**: Detects client-side navigation (pushState/replaceState) and reapplies masking
-- **Toggle On/Off**: Quickly enable or disable masking via the browser popup
-- **Smart Detection**: Multiple detection methods including input types, autocomplete attributes, keyword matching, and regex patterns
+- Automatic masking for common sensitive form fields such as passwords, emails, telephone inputs, payment-related autocomplete fields, and fields labeled with sensitive keywords.
+- Sensitive text masking for patterns currently implemented in code:
+  - email addresses,
+  - Stripe keys,
+  - Google API keys,
+  - GitHub tokens,
+  - Slack tokens,
+  - AWS access key IDs,
+  - JWTs,
+  - bearer tokens,
+  - PEM private keys.
+- Global custom selectors that apply on every site.
+- Per-site rules that can:
+  - add site-specific selectors,
+  - override the global auto-detect setting for one hostname.
+- Element picker that generates a selector from the page and saves it as either a global or site-specific rule.
+- Live masking for dynamic DOM updates and SPA navigation.
+- State-aware toolbar icons for masked vs unmasked mode.
+- Theme preference stored in extension storage.
+- Settings stored in `storage.sync`.
 
 ## Installation
 
-### For Developers
+### Prerequisites
+
+- [Bun](https://bun.sh)
+- A Chromium-based browser or Firefox
+
+### Setup
 
 ```bash
-# Clone the repository
 git clone https://github.com/MaximilianMauroner/hide-sensitive-information.git
 cd hide-sensitive-information
-
-# Install dependencies
 bun install
-
-# Build the extension
 bun run build
 ```
 
-### Load in Chrome
+### Load In Chrome
 
 1. Open `chrome://extensions`
-2. Enable "Developer mode" (toggle in top-right corner)
-3. Click "Load unpacked"
-4. Select the `build/` directory from this project
+2. Enable Developer Mode
+3. Click `Load unpacked`
+4. Select the [`build/`](./build) directory
 
-### Load in Firefox
+### Load In Firefox
 
 1. Run `bun run build`
 2. Open `about:debugging#/runtime/this-firefox`
-3. Click "Load Temporary Add-on"
-4. Select the `build-firefox/manifest.json` file from this project
+3. Click `Load Temporary Add-on`
+4. Select [`build-firefox/manifest.json`](./build-firefox/manifest.json)
 
 ## Usage
 
 ### Toggle Masking
 
-Click the extension icon in your browser toolbar to open the popup, then click the toggle button to hide or show sensitive information on the current page.
+Open the popup and switch masking on or off.
 
-### Add Custom Selectors
+- When masking is on, the extension applies across open tabs and future pages where the content script can run.
+- When masking is off, previously masked content is restored.
 
-**Global Selectors** (applied to all websites):
-1. Click the extension icon
-2. Enter CSS selectors in the "Global selectors" field
-3. Separate multiple selectors with commas or newlines
-4. Click "Save"
+### Use Auto-Detect
+
+The `Auto-filter emails, passwords, keys` toggle controls the built-in heuristics.
+
+- On: automatic field and text masking is enabled.
+- Off: only your saved selectors are applied.
+
+This setting can be overridden per site.
+
+### Add Global Selectors
+
+Use `Global selectors` when a page contains content the extension should always mask but cannot infer automatically.
 
 Example:
+
+```css
+.billing-email,
+input[name="api-token"],
+[data-testid="secret-token"]
 ```
-.billing-email, input[name='api-token'], #credit-card-field
-```
 
-**Per-Site Selectors** (applied to specific domains):
-1. Navigate to the website you want to configure
-2. Click the extension icon
-3. Click "Add site rule"
-4. Enter CSS selectors for that specific site
-5. Click "Save"
+Selectors can be comma-separated or newline-separated.
 
-### Switch Themes
+### Add Per-Site Rules
 
-Click the theme toggle button in the popup to switch between light and dark mode. Your preference is saved automatically.
+Use `Per-site rules` when one hostname needs its own configuration.
 
-## Technical Architecture
+Each site rule can contain:
+
+- `Extra selectors` for that hostname only
+- `Auto-detect sensitive fields` set to:
+  - `Same as global`
+  - `Always on`
+  - `Off for site`
+
+### Use The Element Picker
+
+The element picker is available only while masking is enabled.
+
+1. Open a normal webpage.
+2. Turn masking on.
+3. Click `Pick`.
+4. Click an element on the page.
+5. Save the generated selector as either:
+   - a global selector, or
+   - a selector for the current hostname.
+
+The picker previews the mask before saving.
+
+## What The Extension Detects
+
+### Sensitive Fields
+
+The extension auto-detects fields using:
+
+- input types:
+  - `password`
+  - `email`
+  - `tel`
+- autocomplete values:
+  - `current-password`
+  - `new-password`
+  - `one-time-code`
+  - `cc-number`
+  - `cc-csc`
+  - `cc-exp`
+  - `cc-exp-month`
+  - `cc-exp-year`
+  - `cc-name`
+  - `email`
+  - `tel`
+- keyword checks in:
+  - `name`
+  - `id`
+  - `aria-label`
+  - `placeholder`
+  - `data-testid`
+
+Current keywords include:
+
+- password
+- pass
+- secret
+- token
+- api
+- key
+- auth
+- session
+- ssn
+- social
+- credit
+- card
+- cvv
+- cvc
+- pin
+- email
+- e-mail
+- mail
+- phone
+- tel
+
+### Sensitive Text Nodes
+
+The extension also scans visible text nodes and replaces matching text with masked equivalents.
+
+Current text-pattern coverage is narrower than the field heuristics. In particular:
+
+- plain-text emails are masked,
+- several token/key formats are masked,
+- generic plain-text phone numbers, SSNs, and card numbers do not currently have dedicated broad regex masking unless they are detected through field heuristics or targeted via selectors.
+
+### Custom Selectors
+
+Selectors are applied after built-in detection and are the most reliable way to handle site-specific edge cases.
+
+## Architecture
 
 ### Content Script
-**Location**: `src/index.ts`
 
-The content script runs on all pages and is responsible for:
-- Detecting sensitive input fields using multiple heuristics
-- Masking sensitive information in real-time
-- Monitoring DOM changes with MutationObserver (throttled at 10ms)
-- Detecting SPA navigation by intercepting `history.pushState` and `history.replaceState`
-- Processing visible viewport content first for better perceived performance
-- Finding and masking email addresses in text nodes using regex
+Primary file: [`src/index.ts`](./src/index.ts)
 
-**Key Features**:
-- Runs at `document_start` for earliest possible execution
-- Uses `requestAnimationFrame` for efficient DOM updates
-- Throttles mutation processing to prevent performance degradation
-- Prioritizes viewport content before processing entire page
+Responsibilities:
 
-### Background Service Worker
-**Location**: `src/background.ts`
+- load current state from storage,
+- apply masking early at `document_start`,
+- monitor DOM mutations,
+- re-run masking after SPA navigation,
+- react to storage changes,
+- restore masked content when masking is disabled.
 
-Manages extension state and icon switching:
-- Listens for state changes from the popup
-- Updates the extension icon based on enabled/disabled state
-- Broadcasts state changes to all active tabs
+Implementation details:
 
-### Popup UI
-**Location**: `src/popup/index.ts`
+- DOM mutation work is batched with a `16ms` timeout.
+- Sensitive text replacements are stored with reversible metadata so they can be restored later.
+- Custom selectors and per-site selectors are both applied on every masking pass.
 
-Interactive interface providing:
-- Toggle button for enabling/disabling masking
-- Global selector configuration
-- Per-site selector management
-- Theme switcher
-- Visual feedback for save operations
+### Element Picker
 
-### Utilities
-**Location**: `src/utils.ts`
+Primary files:
 
-Chrome storage helpers including:
-- `getIsHidden()` / `setIsHidden()` - Masking state
-- `getCustomSelectors()` / `setCustomSelectors()` - Global selectors
-- `getSiteSelectors()` / `setSiteSelectors()` - Per-site rules
-- `getTheme()` / `setTheme()` - Theme preferences
-- `getCurrentTab()` - Active tab helper
+- [`src/picker.ts`](./src/picker.ts)
+- [`src/pickerRuntime.ts`](./src/pickerRuntime.ts)
 
-### Build System
+Responsibilities:
 
-Built with modern tooling:
-- **Bun**: JavaScript runtime and build tool
-- **TypeScript**: Type-safe code
-- **Tailwind CSS**: Utility-first styling for popup UI
-- **PostCSS**: CSS processing and optimization
-- **Biome**: Fast linting and formatting
+- highlight the hovered element,
+- generate a stable selector,
+- preview the resulting mask,
+- save the selector to global or per-site settings.
 
-## Detection Methods
+### Popup
 
-The extension uses multiple strategies to identify sensitive fields:
+Primary file: [`src/popup/index.ts`](./src/popup/index.ts)
 
-### 1. HTML Input Types
-- `type="password"`
-- `type="email"`
-- `type="tel"`
+Responsibilities:
 
-### 2. HTML Autocomplete Attributes
-- `current-password`, `new-password`
-- `one-time-code`
-- `cc-number`, `cc-csc`, `cc-exp`, `cc-exp-month`, `cc-exp-year`, `cc-name`
-- `email`, `tel`
+- toggle masking,
+- manage global selectors,
+- manage per-site rules,
+- toggle the global auto-detect setting,
+- launch the picker,
+- persist theme preference.
 
-### 3. Keyword Matching
-Searches for sensitive keywords in element attributes (`name`, `id`, `aria-label`, `placeholder`, `data-testid`):
-- password, pass, secret
-- token, api, key, auth, session
-- ssn, social, credit, card, cvv, cvc, pin
-- email, e-mail, mail
-- phone, tel
+### Background Worker
 
-### 4. Email Regex Pattern
-Detects email addresses in:
-- Input field values
-- Textarea content
-- Text nodes throughout the page
+Primary file: [`src/background.ts`](./src/background.ts)
 
-### 5. Custom CSS Selectors
-User-defined selectors for edge cases and specific applications.
+Responsibilities:
+
+- initialize default masking state on install,
+- keep the toolbar icon in sync with masking state,
+- react to storage changes.
+
+### Shared Detection Utilities
+
+Primary file: [`src/shared.ts`](./src/shared.ts)
+
+Responsibilities:
+
+- parse selectors safely,
+- detect sensitive field metadata,
+- collect text-pattern matches for masking.
 
 ## Development
 
-### Prerequisites
-- [Bun](https://bun.sh) (latest version)
-- Node.js 18+ (for compatibility)
-
-### Development Commands
+### Commands
 
 ```bash
-# Development with hot reload and websocket auto-refresh
-bun run dev
-
-# Build for production
+# Rebuild extension outputs
 bun run build
 
-# Package for distribution (creates a Chrome .zip and Firefox .xpi)
+# Watch src/public/assets and rebuild on change
+bun run dev
+
+# Package release artifacts into ./release
 bun run pack
 
-# Run tests
+# Run automated tests
 bun test
 
 # Run tests in watch mode
-bun test --watch
+bun run test:watch
 
-# Lint and format code
-bunx @biomejs/biome check --write .
-```
-
-### Hot Reload During Development
-
-The `bun run dev` command:
-1. Watches `src/` and `public/` directories for changes
-2. Rebuilds the extension automatically
-3. Sends reload signal via WebSocket server on port 8080
-4. Content script listens for reload messages (if configured)
-
-### Code Quality
-
-This project uses [Biome](https://biomejs.dev) for linting and formatting:
-- Enforces consistent code style
-- Catches common errors
-- Automatically formats on commit (if git hooks configured)
-
-### Testing
-
-Tests are written using Bun's built-in test runner:
-- Unit tests for utility functions (src/__tests__/utils.test.ts)
-- Selector parsing tests (src/__tests__/selectors.test.ts)
-- Masking logic tests (src/__tests__/masking.test.ts)
-
-Run tests with `bun test` or enable watch mode with `bun test --watch`.
-
-## Configuration
-
-### Storage Model
-All settings are stored using the WebExtension `storage.sync` API, which:
-- Synchronizes across devices when signed into Chrome
-- Persists data across browser sessions
-- Has a limit of 100KB total storage
-
-### Custom Selectors Format
-- Comma-separated or newline-separated CSS selectors
-- Standard CSS selector syntax (class, ID, attribute, pseudo-selectors, etc.)
-- Invalid selectors are silently ignored
-
-### Per-Site vs Global Rules
-- **Global rules**: Applied to all websites
-- **Per-site rules**: Only applied to matching hostnames
-- Per-site rules do not override global rules; both are applied
-
-### Theme Persistence
-Theme preference is saved to Chrome storage and reapplied on popup open.
-
-## Known Limitations
-
-- **Sandboxed iframes**: Cannot access content inside sandboxed iframes due to browser security restrictions
-- **Some dynamic content**: Certain edge cases with heavily dynamic content may require page refresh (e.g., StackOverflow Google login popup)
-- **Performance**: Large pages with frequent DOM mutations may experience slight delays (mitigated by 10ms throttling)
-- **Cross-origin iframes**: Cannot mask content in iframes from different origins
-
-## Roadmap
-
-### Completed
-- [x] Move to TypeScript
-- [x] Modern build system with Bun
-- [x] Icon assets
-- [x] Theme switcher
-
-### Planned
-- [ ] Publish to Chrome Web Store
-- [ ] Fix iframe content masking where possible
-- [ ] Performance optimizations for large pages
-- [ ] Additional sensitive data patterns (IP addresses, MAC addresses, etc.)
-- [ ] Import/export configuration
-- [ ] Keyboard shortcuts
-
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. **Fork the repository** and create a feature branch
-2. **Follow code style**: Use Biome for consistent formatting
-   ```bash
-   bunx @biomejs/biome check --write .
-   ```
-3. **Write tests**: Add tests for new functionality in `src/__tests__/`
-4. **Test thoroughly**: Ensure `bun test` passes and manually test the extension
-5. **Submit a pull request** with a clear description of changes
-
-### Development Workflow
-```bash
-# Create a feature branch
-git checkout -b feature/your-feature-name
-
-# Make changes and test
-bun run dev
-
-# Run tests
-bun test
+# Serve the manual test page on http://localhost:4173
+bun run test-page
 
 # Format and lint
 bunx @biomejs/biome check --write .
-
-# Commit and push
-git add .
-git commit -m "Add feature: description"
-git push origin feature/your-feature-name
 ```
 
-## License
+### Development Notes
 
-MIT License - see [LICENSE](LICENSE) file for details.
+- `bun run build` writes browser builds to:
+  - [`build/`](./build)
+  - [`build-firefox/`](./build-firefox)
+- `bun run dev` watches `src`, `public`, and `assets`, then rebuilds when files change.
+- The repo contains a small local WebSocket reload server in [`config/server.ts`](./config/server.ts), but the runtime docs should not assume full automatic extension reload behavior unless that workflow is wired into the browser setup being used.
+
+### Tests
+
+Automated tests cover:
+
+- selector parsing,
+- storage utilities and migration behavior,
+- masking logic,
+- popup picker availability,
+- picker selector generation and lifecycle.
+
+Test files live in [`src/__tests__/`](./src/__tests__).
+
+### Manual Test Page
+
+Use the local manual test page to verify masking behavior in a real browser session:
+
+```bash
+bun run test-page
+```
+
+Then open `http://localhost:4173` with the unpacked extension loaded.
+
+## Limitations
+
+- Cross-origin iframes cannot be inspected or masked by the content script.
+- Sandboxed or browser-internal pages may block content scripts entirely.
+- Plain-text detection is pattern-based and intentionally conservative; some sensitive text still requires explicit selectors.
+- Large, highly dynamic pages can still trigger frequent reprocessing, even with mutation batching.
+
+## Contributing
+
+1. Create a branch for your change.
+2. Keep formatting consistent with Biome.
+3. Add or update tests when behavior changes.
+4. Run `bun test` and manually verify the extension flow.
+5. Open a pull request with a focused description of the change.
 
 ## Privacy
 
 This extension:
-- Does NOT collect or transmit any data
-- Does NOT track user behavior
-- Only stores configuration in browser extension storage
-- Runs entirely offline after installation
 
-All sensitive information processing happens locally in your browser.
+- does not send webpage content to a server,
+- does not include analytics or tracking,
+- stores only user configuration in browser extension storage,
+- performs masking locally in the browser.
+
+See [`PRIVACY_POLICY.md`](./PRIVACY_POLICY.md) for the full policy.
+
+## License
+
+MIT. See [`LICENSE`](./LICENSE).
